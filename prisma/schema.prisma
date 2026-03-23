@@ -1,0 +1,312 @@
+// LinkHub - On-Premise Link Management Platform
+// A self-hosted alternative to Linktree and AllMyLinks
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER MANAGEMENT
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  password      String
+  firstName     String?
+  lastName      String?
+  phone         String?
+  avatar        String?
+  bio           String?
+  
+  // User status
+  role          UserRole  @default(USER)
+  status        UserStatus @default(ACTIVE)
+  emailVerified DateTime?
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+  
+  // Relations
+  profile       Profile?
+  links         Link[]
+  analytics     Analytics[]
+  sessions      Session[]
+  
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+// ============================================
+// PROFILE & CUSTOMIZATION
+// ============================================
+
+model Profile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  
+  // Public profile info
+  displayName     String?
+  customHandle    String?  @unique
+  title           String?
+  bio             String?
+  avatar          String?
+  coverImage      String?
+  
+  // Theme customization
+  theme           ThemeType @default(DARK)
+  primaryColor    String   @default("#3b82f6")
+  backgroundColor String   @default("#0f172a")
+  buttonStyle     ButtonStyle @default(ROUNDED)
+  buttonColor     String   @default("#3b82f6")
+  textColor       String   @default("#ffffff")
+  
+  // Social links (shown on profile)
+  showSocials     Boolean  @default(true)
+  socialLinks     SocialLink[]
+  
+  // Profile settings
+  isPublic        Boolean  @default(true)
+  showAnalytics   Boolean  @default(false)
+  customCSS       String?
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  links           Link[]
+  
+  @@map("profiles")
+}
+
+enum ThemeType {
+  DARK
+  LIGHT
+  GRADIENT
+  MINIMAL
+  CUSTOM
+}
+
+enum ButtonStyle {
+  ROUNDED
+  SQUARE
+  PILLS
+  OUTLINED
+}
+
+model SocialLink {
+  id          String   @id @default(cuid())
+  profileId   String
+  platform    String   // e.g., "twitter", "instagram", "linkedin"
+  url         String
+  icon        String?  // Custom icon URL or emoji
+  order       Int      @default(0)
+  isVisible   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  
+  @@map("social_links")
+}
+
+// ============================================
+// LINKS
+// ============================================
+
+model Link {
+  id            String   @id @default(cuid())
+  profileId     String
+  userId        String
+  
+  // Link content
+  label         String
+  url           String
+  description   String?
+  icon          String?   // Emoji or custom icon URL
+  imageUrl      String?   // Optional preview image
+  
+  // Link settings
+  isActive      Boolean   @default(true)
+  isFeatured    Boolean   @default(false)
+  openInNewTab  Boolean   @default(true)
+  
+  // Scheduling
+  scheduledAt   DateTime?
+  expiresAt     DateTime?
+  
+  // Click tracking
+  clickCount    Int       @default(0)
+  
+  // Order and grouping
+  order         Int       @default(0)
+  groupId       String?
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile       Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  analytics     Analytics[]
+  
+  @@index([profileId])
+  @@index([userId])
+  @@map("links")
+}
+
+// ============================================
+// ANALYTICS
+// ============================================
+
+model Analytics {
+  id          String      @id @default(cuid())
+  linkId      String?
+  userId      String
+  
+  // Event details
+  eventType   EventType   @default(CLICK)
+  slug        String?     // Link slug or 'page_visit'
+  url         String?     // Target URL
+  
+  // Visitor info
+  referrer    String?
+  userAgent   String?
+  browser     String?
+  os          String?
+  device      DeviceType  @default(DESKTOP)
+  
+  // Geo info
+  country     String?
+  city        String?
+  ipAddress   String?
+  isp         String?
+  
+  // Timestamp
+  createdAt   DateTime    @default(now())
+  
+  link        Link?       @relation(fields: [linkId], references: [id], onDelete: SetNull)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([linkId])
+  @@index([createdAt])
+  @@map("analytics")
+}
+
+enum EventType {
+  PAGE_VIEW
+  CLICK
+  UNIQUE_VISITOR
+}
+
+enum DeviceType {
+  DESKTOP
+  MOBILE
+  TABLET
+  BOT
+  UNKNOWN
+}
+
+// ============================================
+// ADMIN SETTINGS
+// ============================================
+
+model AdminSettings {
+  id                    String   @id @default(cuid())
+  
+  // Site configuration
+  siteName              String   @default("LinkHub")
+  siteDescription       String?
+  siteLogo              String?
+  siteFavicon           String?
+  domain                String?  // Primary domain for the site
+  
+  // Registration settings
+  allowRegistration     Boolean  @default(true)
+  requireEmailVerify    Boolean  @default(false)
+  defaultUserRole       UserRole @default(USER)
+  
+  // Default user configuration
+  defaultTheme          ThemeType @default(DARK)
+  defaultPrimaryColor   String   @default("#3b82f6")
+  defaultButtonStyle    ButtonStyle @default(ROUNDED)
+  maxLinksPerUser       Int      @default(50)
+  maxFileSize           Int      @default(5242880) // 5MB in bytes
+  
+  // Email settings (for notifications)
+  smtpHost              String?
+  smtpPort              Int?
+  smtpUser              String?
+  smtpPassword          String?
+  smtpFromEmail         String?
+  
+  // Analytics settings
+  trackIPs              Boolean  @default(true)
+  retentionDays         Int      @default(90)
+  
+  // Footer customization
+  footerText            String?
+  showPoweredBy         Boolean  @default(true)
+  
+  // Custom CSS/JS injection
+  customHeadHTML        String?
+  customBodyHTML        String?
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  @@map("admin_settings")
+}
+
+// ============================================
+// PASSWORD RESET
+// ============================================
+
+model PasswordReset {
+  id          String   @id @default(cuid())
+  userId      String
+  token       String   @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
+  
+  @@map("password_resets")
+}
