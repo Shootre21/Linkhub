@@ -71,17 +71,55 @@ LinkHub is a **100% self-hosted** alternative to popular link-in-bio services li
 
 ## Installation
 
+### 🚀 One-Click Install (Windows)
+
+The easiest way to get started on Windows is using our PowerShell installer:
+
+```powershell
+# Download and run the installer
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Shootre21/Linkhub/main/download/install.ps1" -OutFile "install.ps1"
+.\install.ps1
+```
+
+#### Installer Options
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `-Environment` | Target environment (dev/staging/prod) | dev |
+| `-Port` | Application port | 3000 |
+| `-DatabaseProvider` | Database type (sqlite/postgresql/mysql) | sqlite |
+| `-SkipDocker` | Run without Docker | false |
+| `-Rebuild` | Force rebuild containers | false |
+| `-SkipSeed` | Skip database seeding | false |
+
+```powershell
+# Examples:
+.\install.ps1 -Environment prod -Port 8080
+.\install.ps1 -Rebuild -DatabaseProvider postgresql
+.\install.ps1 -SkipDocker
+```
+
+The installer will:
+- ✅ Validate system prerequisites (PowerShell, Node.js, Docker, Git)
+- ✅ Install missing dependencies automatically
+- ✅ Clone the repository
+- ✅ Set up environment variables
+- ✅ Build and start Docker containers (or run directly)
+- ✅ Initialize and seed the database
+- ✅ Verify everything is working
+
 ### Prerequisites
 
 - Node.js 18.x or later
 - npm, yarn, or bun package manager
 - Git
+- Docker (optional, for containerized deployment)
 
 ### Quick Start
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/linkhub.git
+   git clone https://github.com/Shootre21/Linkhub.git
    cd linkhub
    ```
 
@@ -340,7 +378,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ```bash
 # Clone and install
-git clone https://github.com/yourusername/linkhub.git
+git clone https://github.com/Shootre21/Linkhub.git
 cd linkhub
 npm install
 
@@ -364,9 +402,9 @@ LinkHub is released under the [MIT License](LICENSE).
 
 ## Support
 
-- **Documentation**: [docs.linkhub.dev](https://docs.linkhub.dev)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/linkhub/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/linkhub/discussions)
+- **Documentation**: [README.md](https://github.com/Shootre21/Linkhub#readme)
+- **Issues**: [GitHub Issues](https://github.com/Shootre21/Linkhub/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Shootre21/Linkhub/discussions)
 
 ---
 
@@ -374,6 +412,6 @@ LinkHub is released under the [MIT License](LICENSE).
 
 **Built with ❤️ for privacy-conscious creators and teams**
 
-[Get Started](#installation) • [View Demo](#) • [Report Bug](https://github.com/yourusername/linkhub/issues)
+[Get Started](#installation) • [Report Bug](https://github.com/Shootre21/Linkhub/issues)
 
 </div>
